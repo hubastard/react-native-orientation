@@ -45,6 +45,8 @@ public class OrientationModule extends ReactContextBaseJavaModule implements Lif
     private static final int _DATA_Z = 2;
     private int ORIENTATION_UNKNOWN = -1;
     private int tempOrientRounded = 0;
+    private static final int ORIENTATION_DURATION_THRESHOLD = 15;
+    private int sameOrientationDuration = 0;
 
     final BroadcastReceiver receiver;
     private ReactApplicationContext context;
@@ -196,69 +198,73 @@ public class OrientationModule extends ReactContextBaseJavaModule implements Lif
 
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
+        float[] values = sensorEvent.values;
+        int orientation = ORIENTATION_UNKNOWN;
+        float X = -values[_DATA_X];
+        float Y = -values[_DATA_Y];
+        float Z = -values[_DATA_Z];
+        float magnitude = X*X + Y*Y;
 
-                float[] values = sensorEvent.values;
-                int orientation = ORIENTATION_UNKNOWN;
-                float X = -values[_DATA_X];
-                float Y = -values[_DATA_Y];
-                float Z = -values[_DATA_Z];
-                float magnitude = X*X + Y*Y;
+        if (magnitude * 4 >= Z*Z) {
+            float OneEightyOverPi = 57.29577957855f;
+            float angle = (float)Math.atan2(-Y, X) * OneEightyOverPi;
+            orientation = 90 - (int)Math.round(angle);
+            // normalize to 0 - 359 range
+            while (orientation >= 360) {
+                orientation -= 360;
+            }
+            while (orientation < 0) {
+                orientation += 360;
+            }
+        }
 
-                if (magnitude * 4 >= Z*Z) {
-                    float OneEightyOverPi = 57.29577957855f;
-                    float angle = (float)Math.atan2(-Y, X) * OneEightyOverPi;
-                    orientation = 90 - (int)Math.round(angle);
-                    // normalize to 0 - 359 range
-                    while (orientation >= 360) {
-                        orientation -= 360;
-                    }
-                    while (orientation < 0) {
-                        orientation += 360;
-                    }
+        if (orientation != mOrientationDeg)
+        {
+            mOrientationDeg = orientation;
+            if(orientation == -1){//basically flat
+
+            }
+            else if(orientation < 10 || orientation > 350){
+                tempOrientRounded = 1;//portrait
+            }
+            else if(orientation > 80 && orientation < 100){
+                tempOrientRounded = 2; //lsRight
+            }
+            else if(orientation > 170 && orientation < 190){
+                tempOrientRounded = 3; //upside down
+            }
+            else if(orientation > 260 && orientation < 280){
+                tempOrientRounded = 4;//lsLeft
+            }
+
+        }
+
+        if(mOrientationRounded != tempOrientRounded) {
+            if (sameOrientationDuration > ORIENTATION_DURATION_THRESHOLD) {
+                mOrientationRounded = tempOrientRounded;
+                WritableMap map = Arguments.createMap();
+                switch (mOrientationRounded){
+                    case PORTRAIT:
+                        map.putString("orientation", "PORTRAIT");
+                        sendEvent(context, "sensorOrientationChangeEvent", map);
+                        break;
+                    case LANDSCAPE_LEFT:
+                        map.putString("orientation", "LANDSCAPE-LEFT");
+                        sendEvent(context, "sensorOrientationChangeEvent", map);
+                        break;
+                    case UPSIDE_DOWN:
+                        map.putString("orientation", "PORTRAITUPSIDEDOWN");
+                        sendEvent(context, "sensorOrientationChangeEvent", map);
+                        break;
+                    case LANDSCAPE_RIGHT:
+                        map.putString("orientation", "LANDSCAPE-RIGHT");
+                        sendEvent(context, "sensorOrientationChangeEvent", map);
+                        break;
                 }
-
-                if (orientation != mOrientationDeg)
-                {
-                    mOrientationDeg = orientation;
-                    if(orientation == -1){//basically flat
-
-                    }
-                    else if(orientation < 10 || orientation > 350){
-                        tempOrientRounded = 1;//portrait
-                    }
-                    else if(orientation > 80 && orientation < 100){
-                        tempOrientRounded = 2; //lsRight
-                    }
-                    else if(orientation > 170 && orientation < 190){
-                        tempOrientRounded = 3; //upside down
-                    }
-                    else if(orientation > 260 && orientation < 280){
-                        tempOrientRounded = 4;//lsLeft
-                    }
-
-                }
-                if(mOrientationRounded != tempOrientRounded){
-                    mOrientationRounded = tempOrientRounded;
-                    WritableMap map = Arguments.createMap();
-                    switch (mOrientationRounded){
-                        case PORTRAIT:
-                            map.putString("orientation", "PORTRAIT");
-                            sendEvent(context, "sensorOrientationChangeEvent", map);
-                            break;
-                        case LANDSCAPE_LEFT:
-                            map.putString("orientation", "LANDSCAPE-LEFT");
-                            sendEvent(context, "sensorOrientationChangeEvent", map);
-                            break;
-                        case UPSIDE_DOWN:
-                            map.putString("orientation", "PORTRAITUPSIDEDOWN");
-                            sendEvent(context, "sensorOrientationChangeEvent", map);
-                            break;
-                        case LANDSCAPE_RIGHT:
-                            map.putString("orientation", "LANDSCAPE-RIGHT");
-                            sendEvent(context, "sensorOrientationChangeEvent", map);
-                            break;
-                    }
-                }
+            } else {
+                sameOrientationDuration ++;
+            }
+        }
     }
 
     @Override
@@ -266,9 +272,7 @@ public class OrientationModule extends ReactContextBaseJavaModule implements Lif
 
     }
 
-    private void sendEvent(ReactContext reactContext,
-                           String eventName,
-                           @Nullable WritableMap params) {
+    private void sendEvent(ReactContext reactContext, String eventName, @Nullable WritableMap params) {
         reactContext
                 .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
                 .emit(eventName, params);
