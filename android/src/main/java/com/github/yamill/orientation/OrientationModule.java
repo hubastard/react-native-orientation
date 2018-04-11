@@ -229,15 +229,15 @@ public class OrientationModule extends ReactContextBaseJavaModule implements Lif
                 tempOrientRounded = 1;//portrait
             }
             else if(orientation > 80 && orientation < 100){
-                if (tempOrientRounded != 1) { sameOrientationDuration = 0; }
+                if (tempOrientRounded != 2) { sameOrientationDuration = 0; }
                 tempOrientRounded = 2; //lsRight
             }
             else if(orientation > 170 && orientation < 190){
-                if (tempOrientRounded != 1) { sameOrientationDuration = 0; }
+                if (tempOrientRounded != 3) { sameOrientationDuration = 0; }
                 tempOrientRounded = 3; //upside down
             }
             else if(orientation > 260 && orientation < 280){
-                if (tempOrientRounded != 1) { sameOrientationDuration = 0; }
+                if (tempOrientRounded != 4) { sameOrientationDuration = 0; }
                 tempOrientRounded = 4;//lsLeft
             }
 
