@@ -45,7 +45,7 @@ public class OrientationModule extends ReactContextBaseJavaModule implements Lif
     private static final int _DATA_Z = 2;
     private int ORIENTATION_UNKNOWN = -1;
     private int tempOrientRounded = 0;
-    private static final int ORIENTATION_DURATION_THRESHOLD = 15;
+    private static final int ORIENTATION_DURATION_THRESHOLD = 5;
     private int sameOrientationDuration = 0;
 
     final BroadcastReceiver receiver;
@@ -226,7 +226,7 @@ public class OrientationModule extends ReactContextBaseJavaModule implements Lif
             }
             else if(orientation < 10 || orientation > 350){
                 if (tempOrientRounded != 1) { sameOrientationDuration = 0; }
-                tempOrientRounded = 1;//portrait
+                tempOrientRounded = 1; //portrait
             }
             else if(orientation > 80 && orientation < 100){
                 if (tempOrientRounded != 2) { sameOrientationDuration = 0; }
@@ -238,7 +238,7 @@ public class OrientationModule extends ReactContextBaseJavaModule implements Lif
             }
             else if(orientation > 260 && orientation < 280){
                 if (tempOrientRounded != 4) { sameOrientationDuration = 0; }
-                tempOrientRounded = 4;//lsLeft
+                tempOrientRounded = 4; //lsLeft
             }
 
         }
